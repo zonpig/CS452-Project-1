@@ -4,6 +4,18 @@
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <title>Project 1</title>
 
+    <style>
+      /* CSS styles to center the body */
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+    </style>
+
     <script type="text/javascript" src="Common/webgl-utils.js"></script>
     <script type="text/javascript" src="Common/initShaders.js"></script>
     <script type="text/javascript" src="Common/MV.js"></script>
@@ -31,6 +43,7 @@
 
   <body onload="init();">
     <canvas id="gl-canvas" width="800" height="600"></canvas>
+    <audio id="brick-hit-sound" src="brick-hit.mp3" preload="auto"></audio>
     <div id="start-message" class="start-message">
       Press Space to start the game
     </div>

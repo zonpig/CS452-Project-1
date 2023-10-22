@@ -138,9 +138,15 @@ function checkCollisions() {
         ball.speed.y *= -1;
         bricks[i].isBroken = true;
         score++; // Increment the score
+        playBrickHitSound(); // Play the brick hit sound
       }
     }
   }
+}
+
+function playBrickHitSound() {
+  var brickHitSound = document.getElementById("brick-hit-sound");
+  brickHitSound.play();
 }
 
 function updateScore() {
