@@ -7,10 +7,12 @@ var ball;
 var bricks = [];
 
 var paddleWidth = 100;
-var brickRows = 3;
-var brickCols = 7;
-var brickWidth = 75;
+var brickRows;
+var brickCols;
+var brickWidth;
 var brickHeight = 20;
+var gameStarted = false; // Add a gameStarted variable
+var score = 0; // Add a score variable
 
 function init() {
   canvas = document.getElementById("gl-canvas");
@@ -28,6 +30,9 @@ function init() {
 
   paddle = new Paddle();
   ball = new Ball();
+  brickRows = Math.ceil(Math.random() * 3) + 5;
+  brickCols = Math.ceil(Math.random() * 9) + 6;
+  brickWidth = canvas.width / brickCols;
   initializeBricks();
 
   document.addEventListener("keydown", handleKeyPress);
@@ -36,29 +41,60 @@ function init() {
   requestAnimationFrame(render);
 }
 
+function startGame() {
+  gameStarted = true;
+  // Additional game setup logic (if needed)
+  hideStartMessage(); // Hide the start message
+  showScoreCounter(); // Show the score counter
+}
+
+function hideStartMessage() {
+  var startMessage = document.getElementById("start-message");
+  startMessage.style.display = "none";
+}
+
+function showScoreCounter() {
+  var scoreCounter = document.getElementById("score");
+  scoreCounter.style.display = "block";
+}
+
 function render() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  paddle.update();
-  ball.update();
-  checkCollisions();
+  if (gameStarted) {
+    paddle.update();
+    ball.update();
+    checkCollisions();
+    paddle.render();
+    ball.render();
+    renderBricks();
+    updateScore();
+  }
 
-  paddle.render();
-  ball.render();
-  renderBricks();
-
-  if (ball.position.y + ball.radius > canvas.height) {
-    alert("Game Over!");
-    document.location.reload();
-  } else if (bricks.every((brick) => brick.isBroken)) {
-    alert("You Win!");
-    document.location.reload();
+  if (gameStarted) {
+    if (ball.position.y + ball.radius > canvas.height) {
+      alert("Game Over! Your Score: " + score); // Display the score
+      document.location.reload();
+    } else if (bricks.every((brick) => brick.isBroken)) {
+      alert("You Win! Your Score: " + score); // Display the score
+      document.location.reload();
+    } else {
+      requestAnimationFrame(render);
+    }
   } else {
+    // Request the next frame to keep displaying the start message
     requestAnimationFrame(render);
   }
 }
 
 function handleKeyPress(event) {
+  if (!gameStarted) {
+    // Check for the Space bar to start the game
+    if (event.key === " ") {
+      startGame();
+    }
+    return;
+  }
   if (event.key === "ArrowLeft") {
     paddle.moveLeft();
   } else if (event.key === "ArrowRight") {
@@ -101,9 +137,15 @@ function checkCollisions() {
       ) {
         ball.speed.y *= -1;
         bricks[i].isBroken = true;
+        score++; // Increment the score
       }
     }
   }
+}
+
+function updateScore() {
+  var scoreElement = document.getElementById("score");
+  scoreElement.textContent = "Score: " + score;
 }
 
 class Paddle {
@@ -114,29 +156,32 @@ class Paddle {
       x: (canvas.width - this.width) / 2,
       y: canvas.height - this.height - 10,
     };
-    this.speed = 5;
+    this.speed = 8; // Increase the speed for faster movement
+    this.dx = 0; // Horizontal velocity for smoother movement
   }
 
   moveLeft() {
-    this.position.x -= this.speed;
-    if (this.position.x < 0) {
-      this.position.x = 0;
-    }
+    this.dx = -this.speed;
   }
 
   moveRight() {
-    this.position.x += this.speed;
-    if (this.position.x + this.width > canvas.width) {
-      this.position.x = canvas.width - this.width;
-    }
+    this.dx = this.speed;
   }
 
   stop() {
-    // Stop paddle movement
+    this.dx = 0;
   }
 
   update() {
-    // Paddle logic (if any)
+    // Update the paddle's position based on velocity
+    this.position.x += this.dx;
+
+    // Clamp the paddle's position to stay within the canvas
+    if (this.position.x < 0) {
+      this.position.x = 0;
+    } else if (this.position.x + this.width > canvas.width) {
+      this.position.x = canvas.width - this.width;
+    }
   }
 
   render() {
@@ -178,7 +223,7 @@ class Ball {
   constructor() {
     this.radius = 8;
     this.position = { x: canvas.width / 2, y: canvas.height - 30 };
-    this.speed = { x: 2, y: -2 };
+    this.speed = { x: 5, y: -5 };
   }
 
   update() {
@@ -240,6 +285,7 @@ class Brick {
     this.height = brickHeight;
     this.position = { x, y };
     this.isBroken = false;
+    this.color = getRandomColor(); // Add a color property
   }
 
   update() {
@@ -261,12 +307,27 @@ class Brick {
         this.position.y - this.height,
       ];
 
+      // Define vertices for the border
+      var borderVertices = [
+        this.position.x,
+        this.position.y,
+        this.position.x + this.width,
+        this.position.y,
+        this.position.x + this.width,
+        this.position.y - this.height,
+        this.position.x,
+        this.position.y - this.height,
+        this.position.x,
+        this.position.y,
+      ];
+
       var u_resolution = gl.getUniformLocation(program, "u_resolution");
       gl.uniform2f(u_resolution, canvas.width, canvas.height);
 
       var u_color = gl.getUniformLocation(program, "u_color");
-      gl.uniform4fv(u_color, [0.5, 0.5, 0.9, 1.0]);
 
+      // Set the color for the brick
+      gl.uniform4fv(u_color, this.color); // Use the random color
       var a_position = gl.getAttribLocation(program, "a_position");
       var bufferId = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
@@ -278,9 +339,37 @@ class Brick {
       gl.enableVertexAttribArray(a_position);
       gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
 
+      // Draw the brick
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      // Set the color for the border
+      gl.uniform4fv(u_color, [0.0, 0.0, 0.0, 1.0]);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(borderVertices),
+        gl.STATIC_DRAW
+      );
+
+      // Draw the border
+      gl.drawArrays(gl.LINE_STRIP, 0, 5);
     }
   }
+}
+
+function getRandomColor() {
+  // Array of random colors
+  var colors = [
+    [1.0, 0.51, 0.337, 1.0], // #ff8156
+    [0.99, 1.0, 0.335, 1.0], // #fdff55
+    [0.327, 1.0, 0.674, 1.0], // #53ffac
+    [0.333, 0.596, 1.0, 1.0], // #5598ff
+    [1.0, 0.337, 0.706, 1.0], // #ff56b4
+  ];
+
+  // Choose a random color from the array
+  var randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+  return randomColor;
 }
 
 function renderBricks() {
@@ -290,5 +379,3 @@ function renderBricks() {
     }
   }
 }
-
-// Start the game by calling init() in the HTML file.
