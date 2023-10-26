@@ -7,6 +7,7 @@ var ball;
 var bricks = [];
 
 var paddleWidth = 100;
+var paddleHeight = 10;
 var brickRows;
 var brickCols;
 var brickWidth;
@@ -122,7 +123,8 @@ function checkCollisions() {
   if (
     ball.position.x + ball.radius > paddle.position.x &&
     ball.position.x - ball.radius < paddle.position.x + paddleWidth &&
-    ball.position.y + ball.radius > paddle.position.y
+    ball.position.y + ball.radius > paddle.position.y &&
+    ball.position.y - ball.radius < paddle.position.y + paddleHeight 
   ) {
     ball.speed.y *= -1;
   }
@@ -157,7 +159,7 @@ function updateScore() {
 class Paddle {
   constructor() {
     this.width = paddleWidth;
-    this.height = 10;
+    this.height = paddleHeight;
     this.position = {
       x: (canvas.width - this.width) / 2,
       y: canvas.height - this.height - 10,
@@ -227,7 +229,7 @@ class Paddle {
 
 class Ball {
   constructor() {
-    this.radius = 8;
+    this.radius = 6;
     this.position = { x: canvas.width / 2, y: canvas.height - 30 };
     this.speed = { x: 5, y: -5 };
   }
