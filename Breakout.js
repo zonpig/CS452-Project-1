@@ -55,7 +55,9 @@ function handleKeyRelease(event) {
 
 function initializeBricks() {
   for (var row = 1; row < brickRows + 1; row++) {
+    brickCols = Math.ceil(Math.random() * 3) + 2;
     for (var col = 0; col < brickCols; col++) {
+      brickWidth = canvas.width / brickCols;
       var x = col * brickWidth;
       var y = row * brickHeight;
       bricks.push(new Brick(x, y));
@@ -70,7 +72,16 @@ function checkCollisions() {
     ball.position.y + ball.radius > paddle.position.y &&
     ball.position.y - ball.radius < paddle.position.y + paddleHeight
   ) {
+    // Calculate the relative position of the ball with respect to the paddle
+    const relativePosition =
+      (ball.position.x - paddle.position.x) / paddleWidth;
+
+    // Adjust the ball's speed based on the relative position
+    // This allows for different angles of reflection on the paddle
     ball.speed.y *= -1;
+
+    // Adjust the ball's horizontal speed based on the relative position
+    ball.speed.x = 4 * (relativePosition - 0.5);
   }
 
   for (let i = 0; i < bricks.length; i++) {
@@ -382,11 +393,9 @@ function init() {
 
   paddle = new Paddle();
   ball = new Ball();
-  // brickRows = Math.ceil(Math.random() * 3) + 5;
-  // brickCols = Math.ceil(Math.random() * 9) + 6;
-  brickRows = 3;
-  brickCols = 3;
-  brickWidth = canvas.width / brickCols;
+  brickRows = Math.ceil(Math.random() * 3) + 2;
+  // brickCols = Math.ceil(Math.random() * 3) + 2;
+  // brickWidth = canvas.width / brickCols;
   initializeBricks();
 
   document.addEventListener("keydown", handleKeyPress);
