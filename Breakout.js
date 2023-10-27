@@ -15,33 +15,6 @@ var brickHeight = 20;
 var gameStarted = false; // Add a gameStarted variable
 var score = 0; // Add a score variable
 
-function init() {
-  canvas = document.getElementById("gl-canvas");
-  gl = WebGLUtils.setupWebGL(canvas);
-
-  if (!gl) {
-    alert("WebGL is not available");
-  }
-
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-  program = initShaders(gl, "vertex-shader", "fragment-shader");
-  gl.useProgram(program);
-
-  paddle = new Paddle();
-  ball = new Ball();
-  brickRows = Math.ceil(Math.random() * 3) + 5;
-  brickCols = Math.ceil(Math.random() * 9) + 6;
-  brickWidth = canvas.width / brickCols;
-  initializeBricks();
-
-  document.addEventListener("keydown", handleKeyPress);
-  document.addEventListener("keyup", handleKeyRelease);
-
-  requestAnimationFrame(render);
-}
-
 function startGame() {
   gameStarted = true;
   // Additional game setup logic (if needed)
@@ -57,35 +30,6 @@ function hideStartMessage() {
 function showScoreCounter() {
   var scoreCounter = document.getElementById("score");
   scoreCounter.style.display = "block";
-}
-
-function render() {
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  if (gameStarted) {
-    paddle.update();
-    ball.update();
-    checkCollisions();
-    paddle.render();
-    ball.render();
-    renderBricks();
-    updateScore();
-  }
-
-  if (gameStarted) {
-    if (ball.position.y + ball.radius > canvas.height) {
-      alert("Game Over! Your Score: " + score); // Display the score
-      document.location.reload();
-    } else if (bricks.every((brick) => brick.isBroken)) {
-      alert("You Win! Your Score: " + score); // Display the score
-      document.location.reload();
-    } else {
-      requestAnimationFrame(render);
-    }
-  } else {
-    // Request the next frame to keep displaying the start message
-    requestAnimationFrame(render);
-  }
 }
 
 function handleKeyPress(event) {
@@ -110,7 +54,7 @@ function handleKeyRelease(event) {
 }
 
 function initializeBricks() {
-  for (var row = 0; row < brickRows; row++) {
+  for (var row = 1; row < brickRows + 1; row++) {
     for (var col = 0; col < brickCols; col++) {
       var x = col * brickWidth;
       var y = row * brickHeight;
@@ -121,10 +65,10 @@ function initializeBricks() {
 
 function checkCollisions() {
   if (
-    ball.position.x + ball.radius > paddle.position.x &&
-    ball.position.x - ball.radius < paddle.position.x + paddleWidth &&
+    ball.position.x - ball.radius > paddle.position.x &&
+    ball.position.x + ball.radius < paddle.position.x + paddleWidth &&
     ball.position.y + ball.radius > paddle.position.y &&
-    ball.position.y - ball.radius < paddle.position.y + paddleHeight 
+    ball.position.y - ball.radius < paddle.position.y + paddleHeight
   ) {
     ball.speed.y *= -1;
   }
@@ -132,12 +76,46 @@ function checkCollisions() {
   for (let i = 0; i < bricks.length; i++) {
     if (!bricks[i].isBroken) {
       if (
-        ball.position.x + ball.radius > bricks[i].position.x &&
-        ball.position.x - ball.radius < bricks[i].position.x + brickWidth &&
-        ball.position.y + ball.radius > bricks[i].position.y &&
+        // Top collision
+        ball.position.x - ball.radius > bricks[i].position.x &&
+        ball.position.x + ball.radius < bricks[i].position.x + brickWidth &&
+        ball.position.y - ball.radius > bricks[i].position.y &&
         ball.position.y - ball.radius < bricks[i].position.y + brickHeight
       ) {
         ball.speed.y *= -1;
+        bricks[i].isBroken = true;
+        score++; // Increment the score
+        playBrickHitSound(); // Play the brick hit sound
+      } else if (
+        // Bottom collision
+        ball.position.x - ball.radius > bricks[i].position.x &&
+        ball.position.x + ball.radius < bricks[i].position.x + brickWidth &&
+        ball.position.y + ball.radius > bricks[i].position.y &&
+        ball.position.y + ball.radius < bricks[i].position.y + brickHeight
+      ) {
+        ball.speed.y *= -1;
+        bricks[i].isBroken = true;
+        score++; // Increment the score
+        playBrickHitSound(); // Play the brick hit sound
+      } else if (
+        // Left collision
+        ball.position.x - ball.radius > bricks[i].position.x &&
+        ball.position.x - ball.radius < bricks[i].position.x + brickWidth &&
+        ball.position.y - ball.radius > bricks[i].position.y &&
+        ball.position.y + ball.radius < bricks[i].position.y + brickHeight
+      ) {
+        ball.speed.x *= -1;
+        bricks[i].isBroken = true;
+        score++; // Increment the score
+        playBrickHitSound(); // Play the brick hit sound
+      } else if (
+        // Right collision
+        ball.position.x + ball.radius > bricks[i].position.x &&
+        ball.position.x + ball.radius < bricks[i].position.x + brickWidth &&
+        ball.position.y - ball.radius > bricks[i].position.y &&
+        ball.position.y + ball.radius < bricks[i].position.y + brickHeight
+      ) {
+        ball.speed.x *= -1;
         bricks[i].isBroken = true;
         score++; // Increment the score
         playBrickHitSound(); // Play the brick hit sound
@@ -385,5 +363,63 @@ function renderBricks() {
     if (!bricks[i].isBroken) {
       bricks[i].render();
     }
+  }
+}
+
+function init() {
+  canvas = document.getElementById("gl-canvas");
+  gl = WebGLUtils.setupWebGL(canvas);
+
+  if (!gl) {
+    alert("WebGL is not available");
+  }
+
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+  program = initShaders(gl, "vertex-shader", "fragment-shader");
+  gl.useProgram(program);
+
+  paddle = new Paddle();
+  ball = new Ball();
+  // brickRows = Math.ceil(Math.random() * 3) + 5;
+  // brickCols = Math.ceil(Math.random() * 9) + 6;
+  brickRows = 3;
+  brickCols = 3;
+  brickWidth = canvas.width / brickCols;
+  initializeBricks();
+
+  document.addEventListener("keydown", handleKeyPress);
+  document.addEventListener("keyup", handleKeyRelease);
+
+  requestAnimationFrame(render);
+}
+
+function render() {
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  if (gameStarted) {
+    paddle.update();
+    ball.update();
+    checkCollisions();
+    paddle.render();
+    ball.render();
+    renderBricks();
+    updateScore();
+  }
+
+  if (gameStarted) {
+    if (ball.position.y + ball.radius > canvas.height) {
+      alert("Game Over! Your Score: " + score); // Display the score
+      document.location.reload();
+    } else if (bricks.every((brick) => brick.isBroken)) {
+      alert("You Win! Your Score: " + score); // Display the score
+      document.location.reload();
+    } else {
+      requestAnimationFrame(render);
+    }
+  } else {
+    // Request the next frame to keep displaying the start message
+    requestAnimationFrame(render);
   }
 }
