@@ -17,7 +17,6 @@ var score = 0; // Add a score variable
 
 function startGame() {
   gameStarted = true;
-  // Additional game setup logic (if needed)
   hideStartMessage(); // Hide the start message
   showScoreCounter(); // Show the score counter
 }
@@ -75,13 +74,9 @@ function checkCollisions() {
     // Calculate the relative position of the ball with respect to the paddle
     const relativePosition =
       (ball.position.x - paddle.position.x) / paddleWidth;
-
-    // Adjust the ball's speed based on the relative position
-    // This allows for different angles of reflection on the paddle
-    ball.speed.y *= -1;
-
     // Adjust the ball's horizontal speed based on the relative position
     ball.speed.x = 4 * (relativePosition - 0.5);
+    ball.speed.y *= -1;
   }
 
   for (let i = 0; i < bricks.length; i++) {
@@ -95,8 +90,8 @@ function checkCollisions() {
       ) {
         ball.speed.y *= -1;
         bricks[i].isBroken = true;
-        score++; // Increment the score
-        playBrickHitSound(); // Play the brick hit sound
+        score++;
+        playBrickHitSound();
       } else if (
         // Bottom collision
         ball.position.x - ball.radius > bricks[i].position.x &&
@@ -106,8 +101,8 @@ function checkCollisions() {
       ) {
         ball.speed.y *= -1;
         bricks[i].isBroken = true;
-        score++; // Increment the score
-        playBrickHitSound(); // Play the brick hit sound
+        score++;
+        playBrickHitSound();
       } else if (
         // Left collision
         ball.position.x - ball.radius > bricks[i].position.x &&
@@ -117,8 +112,8 @@ function checkCollisions() {
       ) {
         ball.speed.x *= -1;
         bricks[i].isBroken = true;
-        score++; // Increment the score
-        playBrickHitSound(); // Play the brick hit sound
+        score++;
+        playBrickHitSound();
       } else if (
         // Right collision
         ball.position.x + ball.radius > bricks[i].position.x &&
@@ -128,8 +123,8 @@ function checkCollisions() {
       ) {
         ball.speed.x *= -1;
         bricks[i].isBroken = true;
-        score++; // Increment the score
-        playBrickHitSound(); // Play the brick hit sound
+        score++;
+        playBrickHitSound();
       }
     }
   }
@@ -282,11 +277,7 @@ class Brick {
     this.height = brickHeight;
     this.position = { x, y };
     this.isBroken = false;
-    this.color = getRandomColor(); // Add a color property
-  }
-
-  update() {
-    // Brick logic (if any)
+    this.color = getRandomColor();
   }
 
   render() {
@@ -339,7 +330,7 @@ class Brick {
       // Draw the brick
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-      // Set the color for the border
+      // Set the color for the brick border
       gl.uniform4fv(u_color, [0.0, 0.0, 0.0, 1.0]);
       gl.bufferData(
         gl.ARRAY_BUFFER,
@@ -419,10 +410,10 @@ function render() {
 
   if (gameStarted) {
     if (ball.position.y + ball.radius > canvas.height) {
-      alert("Game Over! Your Score: " + score); // Display the score
+      alert("Game Over! Your Score: " + score); // Lost
       document.location.reload();
     } else if (bricks.every((brick) => brick.isBroken)) {
-      alert("You Win! Your Score: " + score); // Display the score
+      alert("You Win! Your Score: " + score); // Win
       document.location.reload();
     } else {
       requestAnimationFrame(render);
