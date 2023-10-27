@@ -2,7 +2,7 @@
 
 ## Team Members
 
-Bryan Lim
+Bryan Lim  
 Mustapha Jom
 
 ## Controls
